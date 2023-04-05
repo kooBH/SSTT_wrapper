@@ -1,0 +1,14 @@
+{
+  "name": "SSTT_wrapper",
+  "version-string": "unversioned",
+  "homepage": "https://github.com/kooBH/SSTT_wrapper",
+  "description": "wrapper for Streaming Speech-to-Text  of Google cloud services.",
+  "dependencies": [
+    {
+      "name": "google-cloud-cpp",
+      "default-features": false,
+      "features": ["speech"]
+    },
+    "boost-program-options"
+  ]
+}
