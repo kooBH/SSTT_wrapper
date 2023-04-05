@@ -1,25 +1,13 @@
-# ~~~
-# Copyright 2021 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ~~~
+cmake_minimum_required(VERSION 3.17)
+project(SSTT)
 
-cmake_minimum_required(VERSION 3.20)
 
-# Define the project name and where to report bugs.
-set(PACKAGE_BUGREPORT
-    "https://github.com/GoogleCloudPlatform/cpp-samples/issues")
-project(cpp-samples-speech-api CXX)
+set(SRC)
+set(INCL)
+set(LINKLIBS)
+set(COMPILE_OPTION)
+
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/lib/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 find_package(google_cloud_cpp_speech REQUIRED)
 find_package(Boost 1.66 REQUIRED COMPONENTS program_options)
@@ -37,23 +25,31 @@ if (MSVC)
     target_compile_options(parse_arguments PUBLIC "/wd4244" "/wd4251")
 endif ()
 
-foreach (target async_transcribe streaming_transcribe
-                streaming_transcribe_singlethread transcribe)
-    add_executable("${target}" "${target}.cc")
-    target_link_libraries(
-        "${target}" PRIVATE parse_arguments google-cloud-cpp::speech
-                            Boost::program_options Threads::Threads)
-endforeach ()
+list(APPEND SRC
+	SSTT.cpp
+	SSTT.h
+	
+	test.cpp
+  )
+list(APPEND INCL
+  ${CMAKE_CURRENT_LIST_DIR}/.
+  )
+list(APPEND LINKLIBS
+	parse_arguments
+	google-cloud-cpp::speech
+    Boost::program_options
+	Threads::Threads
+  )
+if(MSVC)
+  list(APPEND COMPILE_OPTION
+    )
+else()
+  list(APPEND COMPILE_OPTION
+    )
+endif()
 
-if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-    AND ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER_EQUAL 11))
-    add_executable(streaming_transcribe_coroutines
-                   streaming_transcribe_coroutines.cc)
-    target_compile_features(streaming_transcribe_coroutines PUBLIC cxx_std_20)
-    target_compile_options(streaming_transcribe_coroutines
-                           PUBLIC "-fcoroutines")
-    target_link_libraries(
-        streaming_transcribe_coroutines
-        PRIVATE parse_arguments google-cloud-cpp::speech Boost::program_options
-                Threads::Threads)
-endif ()
+add_executable(${PROJECT_NAME} ${SRC})
+target_include_directories(${PROJECT_NAME}    PRIVATE    ${INCL}  )
+target_link_libraries(${PROJECT_NAME} ${LINKLIBS})
+target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILE_OPTION} )
+set_target_properties(${PROJECT_NAME} PROPERTIES  CXX_STANDARD 17 )

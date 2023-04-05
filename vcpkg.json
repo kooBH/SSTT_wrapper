@@ -1,5 +1,5 @@
 {
-  "name": "SSTT_wrapper",
+  "name": "sstt",
   "version-string": "unversioned",
   "homepage": "https://github.com/kooBH/SSTT_wrapper",
   "description": "wrapper for Streaming Speech-to-Text  of Google cloud services.",
