@@ -7,23 +7,23 @@ set(INCL)
 set(LINKLIBS)
 set(COMPILE_OPTION)
 
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/lib/vcpkg/scripts/buildsystems/vcpkg.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/lib/WAV/WAV.cmake)
 
 find_package(google_cloud_cpp_speech REQUIRED)
 find_package(Boost 1.66 REQUIRED COMPONENTS program_options)
 find_package(Threads)
 
-add_library(parse_arguments STATIC parse_arguments.cc parse_arguments.h)
-target_compile_features(parse_arguments PUBLIC cxx_std_14)
-target_link_libraries(
-    parse_arguments PUBLIC Boost::program_options
-                           google-cloud-cpp::cloud_speech_protos)
-if (MSVC)
+#add_library(parse_arguments STATIC parse_arguments.cc parse_arguments.h)
+#target_compile_features(parse_arguments PUBLIC cxx_std_14)
+#target_link_libraries(
+#   parse_arguments PUBLIC Boost::program_options
+#                           google-cloud-cpp::cloud_speech_protos)
+#if (MSVC)
     # The protobuf-generated files have warnings under the default MSVC
     # settings. We are not interested in these warnings, because we cannot fix
     # them.
-    target_compile_options(parse_arguments PUBLIC "/wd4244" "/wd4251")
-endif ()
+#    target_compile_options(parse_arguments PUBLIC "/wd4244" "/wd4251")
+#endif ()
 
 list(APPEND SRC
 	SSTT.cpp
@@ -35,7 +35,7 @@ list(APPEND INCL
   ${CMAKE_CURRENT_LIST_DIR}/.
   )
 list(APPEND LINKLIBS
-	parse_arguments
+	#parse_arguments
 	google-cloud-cpp::speech
     Boost::program_options
 	Threads::Threads

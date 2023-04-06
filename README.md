@@ -20,6 +20,12 @@ cmake -S. -B.build "-DCMAKE_TOOLCHAIN_FILE=lib/vcpkg/scripts/buildsystems/vcpkg.
 cmake --build .build
 ```
 
+## Credential
+
+```
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/credentials-key.json
+```
+
 ## REFERENCE
 [how to call Google Cloud services from C++](https://github.com/GoogleCloudPlatform/cpp-samples)     
 [vcpkg](https://github.com/microsoft/vcpkg)  

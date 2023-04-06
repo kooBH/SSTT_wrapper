@@ -16,14 +16,14 @@ using RecognizeStream = ::google::cloud::AsyncStreamingReadWriteRpc<
     speech::v1::StreamingRecognizeResponse>;
 
 class SSTT{
-    private : 
+  private : 
     std::string path_config;
     std::unique_ptr<RecognizeStream> stream;
 
-    public : 
-    SSTT(std::string path_config);
+  public : 
+    SSTT();
     ~SSTT();
     void run();
-    int request(short* buf, int size,std::wstring &result);
+    void request(short* buf, int size,std::wstring &result);
     void close();
 };

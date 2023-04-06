@@ -9,8 +9,11 @@
 
 #include "SSTT.h"
 
-SSTT::SSTT(std::string _path_config){
-  path_config = _path_config;
+SSTT::SSTT(){
+}
+
+SSTT::~SSTT(){
+
 }
 
 /*
@@ -22,7 +25,9 @@ auto client = speech::SpeechClient(speech::MakeSpeechConnection());
 
   speech::v1::StreamingRecognizeRequest request;  
   auto& streaming_config = *request.mutable_streaming_config();
-  *streaming_config.mutable_config() = args.config;
+  streaming_config.mutable_config()->set_sample_rate_hertz(16000);
+  streaming_config.mutable_config()->set_language_code("ko-KR");
+  streaming_config.mutable_config()->
 
   // Begin a stream.
   stream = client.AsyncStreamingRecognize();
@@ -35,7 +40,7 @@ auto client = speech::SpeechClient(speech::MakeSpeechConnection());
   }
 
   // Read responses.
-  auto read = [&stream] { return stream->Read().get(); };
+  auto read = [this] { return stream->Read().get(); };
   for (auto response = read(); response.has_value(); response = read()) {
     // Dump the transcript of all the results.
     for (auto const& result : response->results()) {
@@ -46,15 +51,14 @@ auto client = speech::SpeechClient(speech::MakeSpeechConnection());
       }
     }
   }
-  auto status = stream->Finish().get();
-  audio.join();
 
+  auto status = stream->Finish().get();
 } 
 
-int SSTT::request(short*buf, int size,std::wstring &result){
+void SSTT::request(short*buf, int size,std::wstring &result){
   speech::v1::StreamingRecognizeRequest request;
   request.set_audio_content(buf,size);
-  stream.Write(request, grpc::WriteOptions()).get();
+  stream->Write(request, grpc::WriteOptions()).get();
   auto response = stream->Read().get();
   for (auto const& result : response->results()) {
       std::cout << "Result stability: " << result.stability() << "\n";
@@ -68,5 +72,5 @@ int SSTT::request(short*buf, int size,std::wstring &result){
 }
 
 void SSTT::close(){
-  stream.WritesDone().get();
+  stream->WritesDone().get();
 }
