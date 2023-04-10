@@ -20,12 +20,15 @@ class SSTT{
     speech::SpeechClient client;
     std::string path_config;
     std::unique_ptr<RecognizeStream> stream;
+    //RecognizeStream stream;
+
+
+    speech::v1::StreamingRecognizeRequest request;
 
   public : 
     SSTT();
     ~SSTT();
     void run();
-    void write(short* buf, int size,std::wstring &result);
-    void write(char* buf, int size,std::wstring &result);
+    int write(std::vector<char> buf, int size,std::wstring &result);
     void close();
 };

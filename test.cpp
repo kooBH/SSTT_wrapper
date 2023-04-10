@@ -16,14 +16,13 @@ int main(){
 	std::wstring result;
 
 	WAV input;
-	input.OpenFile(path_file);
+//	input.OpenFile(path_file);
 
 	int n_size = 32 * 1024;
 
 	short * buf = new short[n_size];
 
 	recog.run();
-
 
 	int tick = 0;
 	/*
@@ -38,20 +37,29 @@ int main(){
 	}
 	*/
 	std::ifstream file_stream("audio2.raw", std::ios::binary);
-	auto constexpr kChunkSize = 8*1024;
+	if (!file_stream) {
+		printf("Failed to open 'audio2.raw'\n");
+		exit(-1);
+	}
+	auto constexpr kChunkSize = 64*1024;
 	std::vector<char> chunk(kChunkSize);
 
 	while (true) {
 		// Read another chunk from the file.
 		file_stream.read(chunk.data(), chunk.size());
 		int bytes_read = file_stream.gcount();
-		printf("bytes read : %d\n",bytes_read);
 		// And write the chunk to the stream.
 		if (bytes_read > 0) {
-			recog.write(chunk.data(), bytes_read, result);
-		  //printf("tick : %d\n",tick++);
+			printf("sending : %d k bytes\n",bytes_read/1024);
+			int ret = recog.write(chunk, bytes_read, result);
+			if(!ret)break;
+		}else {
+			printf("0 bytes read\n");	
+			recog.close();
+			break;
 		}
 		if (!file_stream) {
+			printf("closing file stream\n");
 			// Done reading everything from the file, so done writing to the stream.
 			recog.close();
 			break;
