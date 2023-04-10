@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <atomic>
 
 //Audio recording parameters
 // RATE = 16000
@@ -17,18 +18,32 @@ using RecognizeStream = ::google::cloud::AsyncStreamingReadWriteRpc<
 
 class SSTT{
   private : 
-    speech::SpeechClient client;
     std::string path_config;
-    std::unique_ptr<RecognizeStream> stream;
-    //RecognizeStream stream;
+    /*
+    Korean : "ko-KR"
+    English : "en-US"
+    */
+    std::string language_code;
+    int samplerate;
 
-
-    speech::v1::StreamingRecognizeRequest request;
+    std::atomic<bool> request_available;
+    std::atomic<bool> write_available;
+    std::atomic<bool> request_running;
+    short* buf;
+    size_t max_size, n_size;
 
   public : 
-    SSTT();
+    std::unique_ptr<RecognizeStream> stream;
+    SSTT(
+      std::string language_code="en-US",
+      int samplerate=16000,
+      size_t max_size=32*1024
+    );
     ~SSTT();
-    void run();
-    int write(std::vector<char> buf, int size,std::wstring &result);
-    void close();
+    void Run();
+    void Write(short*, int size);
+    void Request();
+    int Read();
+    void Finish();
+    int Close();
 };
