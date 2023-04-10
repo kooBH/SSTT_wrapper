@@ -17,6 +17,7 @@ using RecognizeStream = ::google::cloud::AsyncStreamingReadWriteRpc<
 
 class SSTT{
   private : 
+    speech::SpeechClient client;
     std::string path_config;
     std::unique_ptr<RecognizeStream> stream;
 
@@ -24,6 +25,7 @@ class SSTT{
     SSTT();
     ~SSTT();
     void run();
-    void request(short* buf, int size,std::wstring &result);
+    void write(short* buf, int size,std::wstring &result);
+    void write(char* buf, int size,std::wstring &result);
     void close();
 };

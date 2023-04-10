@@ -7,6 +7,9 @@ set(INCL)
 set(LINKLIBS)
 set(COMPILE_OPTION)
 
+set(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH C:/workplace/roots.pem)
+set(GOOGLE_APPLICATION_CREDENTIALS C:/workplace/key/eternal-photon-379901-af0f9d61554d.json )
+
 include(${CMAKE_CURRENT_LIST_DIR}/lib/WAV/WAV.cmake)
 
 find_package(google_cloud_cpp_speech REQUIRED)
