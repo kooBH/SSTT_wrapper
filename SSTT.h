@@ -32,6 +32,8 @@ class SSTT{
     short* buf;
     size_t max_size, n_size;
 
+    std::string transcript;
+
   public : 
     std::unique_ptr<RecognizeStream> stream;
     SSTT(
@@ -46,4 +48,8 @@ class SSTT{
     int Read();
     void Finish();
     int Close();
+
+    std::string GetTranscript();
+
+
 };

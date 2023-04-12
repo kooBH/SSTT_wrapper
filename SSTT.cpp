@@ -19,9 +19,6 @@ https://github.com/GoogleCloudPlatform/cpp-samples/blob/main/speech/api/streamin
 */
 
 void SSTT::Run(){
-
-
-
 	std::thread t1(&SSTT::Request, this);
   t1.detach();
 
@@ -37,7 +34,7 @@ void SSTT::Write(short*cur_buf, int cur_size) {
   n_size = cur_size;
   memcpy(buf, cur_buf, sizeof(short) * n_size);
   request_available.store(true);
-  printf("Write()\n");
+  printf("SSTT::Write()\n");
 }
 
 void SSTT::Request() 
@@ -59,7 +56,6 @@ void SSTT::Request()
      // Write().get() returns false if the stream is closed.
      throw stream->Finish().get();
   }
-
   write_available.store(true);
   request_available.store(false);
   request_running.store(true);
@@ -75,7 +71,7 @@ void SSTT::Request()
         throw stream->Finish().get();
       }
       write_available.store(true);
-      printf("Request()\n");
+      printf("SST::Request()\n");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
@@ -102,6 +98,7 @@ int SSTT::Read() {
   while (!request_running.load()) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+  printf("SSTT::Read()::start\n");
 
   for (
     auto response = stream->Read().get();
@@ -112,8 +109,11 @@ int SSTT::Read() {
     auto const& result = response->results()[0];
     auto const& best = result.alternatives()[0];
 
+    printf("SSTT::Read()\n");
+
     if (!strcmp(language_code.c_str(), "ko-KR")) {
       std::string tmp = best.transcript();
+      transcript = tmp;
     
       // UTF-8, 3-byte, Korean, Encoding
       for (int i = 0; i < tmp.length(); i += 3)
@@ -121,10 +121,16 @@ int SSTT::Read() {
       std::cout << std::endl;
     }
     else {
+      transcript = best.transcript();
       std::cout << best.transcript() << "\n";
     }
   }
   Close();
 
   return 0;
+}
+
+
+std::string SSTT::GetTranscript() {
+  return transcript;
 }
