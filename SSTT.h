@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <atomic>
+#include <memory>
 
 //Audio recording parameters
 // RATE = 16000
@@ -33,6 +34,10 @@ class SSTT{
     size_t max_size, n_size;
 
     std::string transcript;
+
+    std::unique_ptr<std::thread> thread_request;
+    std::unique_ptr<std::thread> thread_read;
+    
 
   public : 
     std::unique_ptr<RecognizeStream> stream;

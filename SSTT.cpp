@@ -6,7 +6,6 @@ SSTT::SSTT(std::string _language_code,int _samplerate, size_t _max_size){
   max_size = _max_size;
 
   buf = new short[max_size];
-
   request_running.store(false);
 }
 
@@ -19,12 +18,19 @@ https://github.com/GoogleCloudPlatform/cpp-samples/blob/main/speech/api/streamin
 */
 
 void SSTT::Run(){
-	std::thread t1(&SSTT::Request, this);
-  t1.detach();
+  thread_request = std::make_unique<std::thread>(&SSTT::Request, this);
+  thread_read = std::make_unique<std::thread>(&SSTT::Read, this);
 
+
+  thread_request->detach();
+  thread_read->detach();
 } 
 
 void SSTT::Write(short*cur_buf, int cur_size) {
+
+  if (!write_available.load())return;
+
+  int cnt = 0;
   while (!write_available.load()) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
@@ -34,11 +40,10 @@ void SSTT::Write(short*cur_buf, int cur_size) {
   n_size = cur_size;
   memcpy(buf, cur_buf, sizeof(short) * n_size);
   request_available.store(true);
-  printf("SSTT::Write()\n");
+  //printf("SSTT::Write()\n");
 }
 
-void SSTT::Request() 
-  {
+void SSTT::Request(){
   speech::SpeechClient client = speech::SpeechClient(speech::MakeSpeechConnection());
 
   speech::v1::StreamingRecognizeRequest request;
@@ -71,7 +76,7 @@ void SSTT::Request()
         throw stream->Finish().get();
       }
       write_available.store(true);
-      printf("SST::Request()\n");
+     // printf("SST::Request()\n");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
@@ -94,22 +99,30 @@ int SSTT::Close(){
 }
 
 int SSTT::Read() {
-
   while (!request_running.load()) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  printf("SSTT::Read()::start\n");
+  printf("SSTT::Read()::Start\n");
 
-  for (
+  /*
+    for (
     auto response = stream->Read().get();
     response.has_value();
     response = stream->Read().get()) {
+  */
+  while(request_running.load()){
+    stream->Read().wait();
+    auto response = stream->Read().get();
 
+    if (!response.has_value()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      continue;
+    }
+    //printf("SSTT::Read()\n");
     // Best only
     auto const& result = response->results()[0];
     auto const& best = result.alternatives()[0];
 
-    printf("SSTT::Read()\n");
 
     if (!strcmp(language_code.c_str(), "ko-KR")) {
       std::string tmp = best.transcript();
@@ -124,7 +137,9 @@ int SSTT::Read() {
       transcript = best.transcript();
       std::cout << best.transcript() << "\n";
     }
+
   }
+  printf("Close Read\n");
   Close();
 
   return 0;
