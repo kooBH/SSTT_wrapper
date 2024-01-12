@@ -10,6 +10,9 @@ SSTT::SSTT(std::string _language_code,int _samplerate, size_t _max_size){
   updated.store(false);
   is_final.store(false);
   flag_clear.store(false);
+
+  alive_read.store(false);
+  alive_request.store(false);
 }
 
 SSTT::~SSTT(){
@@ -23,6 +26,9 @@ https://github.com/GoogleCloudPlatform/cpp-samples/blob/main/speech/api/streamin
 */
 
 void SSTT::Run(){
+  alive_request.store(true);
+  alive_read.store(true);
+
   thread_request = std::make_unique<std::thread>(&SSTT::Request, this);
   thread_read = std::make_unique<std::thread>(&SSTT::Read, this);
 
@@ -57,7 +63,6 @@ void SSTT::Request(){
    streaming_config.set_interim_results(true);
    streaming_config.enable_voice_activity_events();
 
-
   // Begin a stream.
   stream = client.AsyncStreamingRecognize();
   //  The stream can fail to start, and `.get()` returns an error in this case.
@@ -87,6 +92,9 @@ void SSTT::Request(){
         request_running.store(false);
         // Write().get() returns false if the stream is closed.
         //throw stream->Finish().get();
+
+        while(alive_read.load())
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
         dead = true;
       }
       write_available.store(true);
@@ -94,6 +102,7 @@ void SSTT::Request(){
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+  alive_request.store(false);
 }
 
 void SSTT::Finish() {
@@ -170,6 +179,7 @@ int SSTT::Read() {
   printf("Close Read\n");
   Close();
 
+  alive_read.store(false);
   return 0;
 }
 

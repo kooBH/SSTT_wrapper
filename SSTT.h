@@ -39,6 +39,7 @@ class SSTT{
 
     std::unique_ptr<std::thread> thread_request;
     std::unique_ptr<std::thread> thread_read;
+
     
 
   public : 
@@ -60,6 +61,8 @@ class SSTT{
 
     std::string GetTranscript();
     std::atomic<bool>updated;
+    std::atomic<bool> alive_request;
+    std::atomic<bool> alive_read;
 
     /*
     * 2024.01.12
