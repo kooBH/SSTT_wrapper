@@ -27,9 +27,11 @@ class SSTT{
     std::string language_code;
     int samplerate;
 
+    speech::v1::StreamingRecognizeRequest request;
     std::atomic<bool> request_available;
     std::atomic<bool> write_available;
     std::atomic<bool> request_running;
+    std::atomic<bool> flag_clear;
     short* buf;
     size_t max_size, n_size;
 
@@ -41,6 +43,7 @@ class SSTT{
 
   public : 
     std::unique_ptr<RecognizeStream> stream;
+    std::atomic<bool> is_final;
     SSTT(
       std::string language_code="en-US",
       int samplerate=16000,
@@ -53,8 +56,18 @@ class SSTT{
     int Read();
     void Finish();
     int Close();
+    void Clear();
 
     std::string GetTranscript();
+    std::atomic<bool>updated;
+
+    /*
+    * 2024.01.12
+    * Temporal solution for SSTT::Request()::Error
+    When there is bottleneck in other process, SSTT::Request()::Error occurs.
+    Then set dead to true, and delete SSTT and recreate it.
+    */
+    bool dead = false;
 
 
 };

@@ -7,9 +7,14 @@ SSTT::SSTT(std::string _language_code,int _samplerate, size_t _max_size){
 
   buf = new short[max_size];
   request_running.store(false);
+  updated.store(false);
+  is_final.store(false);
+  flag_clear.store(false);
 }
 
 SSTT::~SSTT(){
+  request_running.store(false);
+
   delete [] buf;
 }
 
@@ -20,7 +25,6 @@ https://github.com/GoogleCloudPlatform/cpp-samples/blob/main/speech/api/streamin
 void SSTT::Run(){
   thread_request = std::make_unique<std::thread>(&SSTT::Request, this);
   thread_read = std::make_unique<std::thread>(&SSTT::Read, this);
-
 
   thread_request->detach();
   thread_read->detach();
@@ -46,12 +50,13 @@ void SSTT::Write(short*cur_buf, int cur_size) {
 void SSTT::Request(){
   speech::SpeechClient client = speech::SpeechClient(speech::MakeSpeechConnection());
 
-  speech::v1::StreamingRecognizeRequest request;
   auto& streaming_config = *request.mutable_streaming_config();
   streaming_config.mutable_config()->set_sample_rate_hertz(samplerate);
   streaming_config.mutable_config()->set_language_code(language_code);
   streaming_config.mutable_config()->set_encoding(::google::cloud::speech::v1::RecognitionConfig::LINEAR16);
    streaming_config.set_interim_results(true);
+   streaming_config.enable_voice_activity_events();
+
 
   // Begin a stream.
   stream = client.AsyncStreamingRecognize();
@@ -69,11 +74,20 @@ void SSTT::Request(){
     if (request_available.load()) {
       request_available.store(false);
 
-      request.set_audio_content(buf, n_size*sizeof(short));
+      if (flag_clear.load()) {
+        printf("SSTT::Clear()\n");
+        request.clear_audio_content();
+        //request.clear_streaming_request();
+        flag_clear.store(false);
+      }
+      else 
+        request.set_audio_content(buf, n_size*sizeof(short));
       if (!stream->Write(request, grpc::WriteOptions{}).get()) {
         printf("SSTT::Request()::Error\n");
+        request_running.store(false);
         // Write().get() returns false if the stream is closed.
-        throw stream->Finish().get();
+        //throw stream->Finish().get();
+        dead = true;
       }
       write_available.store(true);
      // printf("SST::Request()\n");
@@ -93,6 +107,8 @@ void SSTT::Finish() {
 
 int SSTT::Close(){
   printf("SSTT::Close()\n");
+  if (dead)return -1;
+  return 0;
   auto status = stream->Finish().get();
   request_running.store(false);
   return 0;
@@ -111,18 +127,29 @@ int SSTT::Read() {
     response = stream->Read().get()) {
   */
   while(request_running.load()){
+    if(!stream)
     stream->Read().wait();
+    //stream->Read().wait_for(std::chrono::milliseconds(100));
     auto response = stream->Read().get();
 
     if (!response.has_value()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      //printf("SSTT::Read::has_no_value\n");
       continue;
     }
     //printf("SSTT::Read()\n");
     // Best only
+    if (response->results().empty()) {
+      printf("SSTT::Read::result.empty\n");
+      continue;
+    }
     auto const& result = response->results()[0];
     auto const& best = result.alternatives()[0];
 
+    if (result.is_final()) { 
+      printf("SSTT::Read::final\n");
+      is_final.store(true); 
+    }
 
     if (!strcmp(language_code.c_str(), "ko-KR")) {
       std::string tmp = best.transcript();
@@ -137,6 +164,7 @@ int SSTT::Read() {
       transcript = best.transcript();
       std::cout << best.transcript() << "\n";
     }
+    updated.store(true);
 
   }
   printf("Close Read\n");
@@ -147,5 +175,10 @@ int SSTT::Read() {
 
 
 std::string SSTT::GetTranscript() {
+  updated.store(false);
   return transcript;
+}
+
+void SSTT::Clear() {
+  flag_clear.store(true);
 }
