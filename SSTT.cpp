@@ -18,6 +18,11 @@ SSTT::SSTT(std::string _language_code,int _samplerate, size_t _max_size){
 SSTT::~SSTT(){
   request_running.store(false);
 
+  while(alive_read.load())
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  while(alive_request.load())
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
   delete [] buf;
 }
 
@@ -82,13 +87,25 @@ void SSTT::Request(){
       if (flag_clear.load()) {
         printf("SSTT::Clear()\n");
         request.clear_audio_content();
-        //request.clear_streaming_request();
+
+        // TODO : something invalid with config request
+        // SSTT::Request()::Error(3) : Malordered Data Received. Expected audio_content none was set. Send exactly one config, followed by audio data.
+        /*
+        request.clear_streaming_request();
+        if (!stream->Write(request, grpc::WriteOptions{}).get()) {
+           // Write().get() returns false if the stream is closed.
+           throw stream->Finish().get();
+        }
+        */
+
         flag_clear.store(false);
       }
       else 
         request.set_audio_content(buf, n_size*sizeof(short));
+
       if (!stream->Write(request, grpc::WriteOptions{}).get()) {
-        printf("SSTT::Request()::Error\n");
+        auto status = stream->Finish().get();
+        printf("SSTT::Request()::Error(%d) : %s\n", status.code(), status.message().c_str());
         request_running.store(false);
         // Write().get() returns false if the stream is closed.
         //throw stream->Finish().get();
@@ -149,7 +166,7 @@ int SSTT::Read() {
     //printf("SSTT::Read()\n");
     // Best only
     if (response->results().empty()) {
-      printf("SSTT::Read::result.empty\n");
+      printf("SSTT::Read::result is empty\n");
       continue;
     }
     auto const& result = response->results()[0];
@@ -191,4 +208,8 @@ std::string SSTT::GetTranscript() {
 
 void SSTT::Clear() {
   flag_clear.store(true);
+}
+
+bool SSTT::IsRunning() {
+  return request_running.load();
 }

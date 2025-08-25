@@ -1,7 +1,8 @@
 # See README for more details
 
 find_package(google_cloud_cpp_speech REQUIRED)
-find_package(Boost 1.66 REQUIRED COMPONENTS program_options)
+# find_package(Boost 1.66 REQUIRED COMPONENTS program_options)
+find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
 find_package(Threads)
 
 list(APPEND SRC

@@ -23,6 +23,7 @@ class SSTT{
     /*
     Korean : "ko-KR"
     English : "en-US"
+    Japanese : "ja-JP"
     */
     std::string language_code;
     int samplerate;
@@ -40,6 +41,8 @@ class SSTT{
     std::unique_ptr<std::thread> thread_request;
     std::unique_ptr<std::thread> thread_read;
 
+    void Request();
+    int Read();
     
 
   public : 
@@ -53,11 +56,15 @@ class SSTT{
     ~SSTT();
     void Run();
     void Write(short*, int size);
-    void Request();
-    int Read();
     void Finish();
     int Close();
     void Clear();
+
+    void SetLanguageCode(std::string _language_code) {
+        language_code = _language_code;
+    }
+
+    bool IsRunning();
 
     std::string GetTranscript();
     std::atomic<bool>updated;
